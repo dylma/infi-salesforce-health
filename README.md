@@ -11,3 +11,11 @@ This repo contains all the experience, process, and system APIs for inerfacing w
 
 [DesignDocument]
 [infi-salesforce-health Design Doc.pdf](https://github.com/user-attachments/files/18519511/infi-salesforce-health.Design.Doc.pdf)
+
+[Assumptions]
+1. We're assuming the client can send in bulk
+2. No transformation mapping sheet was provided so we inferred the transformation between source and target systems
+
+[Challenges]
+1. Salesforce Administration.  Had to create robot users, connected app, permission sets, and profiles and assign them appropriate to be able to invoke the Health Cloud platform APIs
+2. ID from CareBenefitVerifyRequest creation is hidden in mulesoft response (workaround needed to fetch this)
