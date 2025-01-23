@@ -1,0 +1,45 @@
+#%RAML 1.0
+title: Salesforce Record Creation API
+version: v1
+baseUri: https://api.yourdomain.com/{version}
+protocols: [ HTTPS ]
+mediaType: application/json
+
+/salesforce-create-CareBenefitVerifyRequest:
+  post:
+    description: Create a new CareBenefitVerifyRequest record in Salesforce
+    body:
+      application/json:
+        example:
+          MemberId: "MID123"
+          
+    responses:
+      201:
+        description: Record successfully created in Salesforce
+        body:
+          application/json:
+            example:
+              id: "a1B0Y00000123xyz"
+              success: true
+      400:
+        description: Invalid input data or missing required fields
+        body:
+          application/json:
+            example:
+              error: "Bad Request"
+              message: "Missing required fields or invalid data."
+      401:
+        description: Unauthorized - Invalid or expired API key
+        body:
+          application/json:
+            example:
+              error: "Unauthorized"
+              message: "Invalid or expired API key."
+      500:
+        description: Internal server error
+        body:
+          application/json:
+            example:
+              error: "Internal Server Error"
+              message: "An unexpected error occurred."
+

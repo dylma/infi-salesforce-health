@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd">
+	<flow name="CareBenefitVerificationRequest_Create" doc:id="4b8b9d25-a382-401c-a545-62c8c03ac9a8" >
+		<jms:listener doc:name="On New Message" doc:id="c4011cb3-f10d-42e7-90ed-a2979d29dd23" config-ref="JMS_Config" destination="CareBenefitVerifcationRequest_Creation" ackMode="IMMEDIATE"/>
+		<logger level="INFO" doc:name="Logger" doc:id="b64e6ff3-f515-456a-9f9a-c33d28289f42" message="#[&quot;[&quot; ++ (now() &gt;&gt; &quot;PST&quot;) as String {format: &quot;yyyy-MM-dd'T'hh:mm:ss&quot;} ++ &quot;], &quot; ++ &quot;###SyncJobId=&quot; &#10;++ attributes.properties.userProperties.transaction_header.syncJobId&#10;++ &quot;###, TransactionId=&quot; ++ attributes.properties.userProperties.transaction_header.transactionId ++&#10;&quot;\nCareBenefitVerificationRequest Creation Process API Started Successfully&quot;]"/>
+		<ee:transform doc:name="Transform Message" doc:id="b491a098-5b19-4ddb-a34a-39028f3b759f" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="snowflake_payload" ><![CDATA[%dw 2.0
+output application/json
+---
+payload.patients map (val,ind) ->{
+	"FIRST_NAME" : val.patient_details.first_name,
+	"LAST_NAME" : val.patient_details.last_name,
+	"DATE_OF_BIRTH" : val.patient_details.date_of_birth,
+	"GENDER" : val.patient_details.gender,
+	"INSURANCE_PROVIDER_NAME" : val.insurance_information.insurance_provider_name,
+	"POLICY_NUMBER" : val.insurance_information.policy_number,
+	"GROUP_NUMBER" : val.insurance_information.group_number,
+	"SUBSCRIBER_ID" : val.insurance_information.subscriber_id,
+	"NATIONAL_PROVIDER_IDENTIFIER" : val.provider_information.npi,
+	"PROVIDER_NAME" : val.provider_information.provider_name,
+	"SERVICE_TYPE" : val.service_details.service_type,
+	"SERVICE_DATE" : val.service_details.service_date,
+	"DIAGNOSIS_CODE" : val.service_details.diagnosis_code,
+	"PROCEDURE_CODE" : val.service_details.procedure_code,
+	"PROCESS_FLAG" :"IP",
+	"PROCESS_MESSAGE" : "",
+}]]></ee:set-variable>
+				<ee:set-variable variableName="insert_payload_sql" ><![CDATA[%dw 2.0
+output text/plain
+---
+"INSERT INTO INFINITUS.MULESOFT.SFHC_CARE_BENEFIT_VERIFCATION_REQS(
+FIRST_NAME,LAST_NAME,DATE_OF_BIRTH,GENDER,INSURANCE_PROVIDER_NAME,POLICY_NUMBER,GROUP_NUMBER,SUBSCRIBER_ID,NATIONAL_PROVIDER_IDENTIFIER,PROVIDER_NAME,SERVICE_TYPE,SERVICE_DATE,DIAGNOSIS_CODE,PROCEDURE_CODE,PROCESS_FLAG,PROCESS_MESSAGE) 
+VALUES (
+:FIRST_NAME,:LAST_NAME,:DATE_OF_BIRTH,:GENDER,:INSURANCE_PROVIDER_NAME,:POLICY_NUMBER,:GROUP_NUMBER,:SUBSCRIBER_ID,:NATIONAL_PROVIDER_IDENTIFIER,:PROVIDER_NAME,:SERVICE_TYPE,:SERVICE_DATE,:DIAGNOSIS_CODE,:PROCEDURE_CODE,:PROCESS_FLAG,:PROCESS_MESSAGE)"]]></ee:set-variable>
+			</ee:variables>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="03815f6a-261a-4651-8030-534ebb667139" message="#[payload]"/>
+		<http:request method="POST" doc:name="InsertToSnowflakeCareBenefitVerifyRequestTable" doc:id="cc1496a0-99a3-4c7d-8ecb-b860e6e22bf1" target="snowResults" config-ref="HTTP_Request_configuration" path="/snowflake/executeSql">
+			<http:body ><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+	"payload": vars.snowflake_payload,
+	"sql" : vars.insert_payload_sql,
+	"transaction_header" : attributes.properties.userProperties.transaction_header
+}]]]></http:body>
+		</http:request>
+		<logger level="INFO" doc:name="Logger" doc:id="6f471257-f3f4-494f-a986-02f13c3bda42" message="#[&quot;[&quot; ++ (now() &gt;&gt; &quot;PST&quot;) as String {format: &quot;yyyy-MM-dd'T'hh:mm:ss&quot;} ++ &quot;], &quot; ++ &quot;###SyncJobId=&quot; &#10;++ attributes.properties.userProperties.transaction_header.syncJobId&#10;++ &quot;###, TransactionId=&quot; ++ attributes.properties.userProperties.transaction_header.transactionId ++&#10;&quot;\nCareBenefitVerificationRequest Archival Into Snowflake Ended Successfully&quot;]"/>
+		<ee:transform doc:name="Transform Message" doc:id="84f8e8d3-2499-414d-ac94-3f9c0abe20f1" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+var patients = payload.patients
+
+// Function to map individual patient details
+fun mapPatient(patient) =
+  {
+    //"Name": patient.patient_details.first_name ++ " " ++ patient.patient_details.last_name,
+   // "CreatedDate": patient.service_details.service_date,
+    //"CreatedById": null,
+    //"LastModifiedDate": patient.service_details.service_date,
+   // "LastModifiedById": null,
+   // "SystemModstamp": patient.service_details.service_date,
+    "MemberPlanId": patient.insurance_information.policy_number,//"0SqfJ00000007uOSAQ"
+    //"RequestedById": patient.provider_information.npi,
+   // "RequestDate": patient.service_details.service_date,
+   // "CoverageBenefitId": patient.insurance_information.group_number,
+   // "CaseId": patient.service_details.diagnosis_code,
+    "Status": "Pending", 
+   // "StatusReason": patient.service_details.procedure_description,
+   // "ResponseName": null,
+   // "ResponseContentType": null,
+   // "ResponseLength": 0,
+   // "ResponseBody": null
+   
+  }
+
+---
+{
+  "patients": patients map (patient) -> mapPatient(patient)
+}  ]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<http:request method="POST" doc:name="CreateSalesforceRecord" doc:id="3eda012b-bff1-408d-989d-aae45ad2d936" config-ref="HTTPS_Request_configuration1" responseTimeout="60000" target="salesforceResults" path="/sfhc/salesforce-create-CareBenefitVerifyRequest">
+			<http:body><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+	"payload": payload,
+	"transaction_header" : attributes.properties.userProperties.transaction_header
+}]]]></http:body>
+		</http:request>
+		<jms:publish doc:name="Publish" doc:id="93865a39-0939-4d48-b375-896ca9e444ce" config-ref="JMS_Config" destination="${jms.replyTo}">
+			<jms:message correlationId="#[attributes.headers.correlationId]" >
+				<jms:body ><![CDATA[#[vars.salesforceResults]]]></jms:body>
+			</jms:message>
+		</jms:publish>
+		<logger level="INFO" doc:name="Logger" doc:id="d72d7bef-f4e8-41ba-9a5c-3311745490d2" message="#[&quot;[&quot; ++ (now() &gt;&gt; &quot;PST&quot;) as String {format: &quot;yyyy-MM-dd'T'hh:mm:ss&quot;} ++ &quot;], &quot; ++ &quot;###SyncJobId=&quot; &#10;++ attributes.properties.userProperties.transaction_header.syncJobId&#10;++ &quot;###, TransactionId=&quot; ++ attributes.properties.userProperties.transaction_header.transactionId ++&#10;&quot;\nCareBenefitVerificationRequest Creation Process API Ended Successfully&quot;]"/>
+		<error-handler>
+			<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="9460a35e-6e78-4b08-aac3-8848128ab698" >
+				<flow-ref doc:name="Flow Reference" doc:id="34f6be2e-47b1-4f5d-aa58-ddc209f896fc" name="errorHandling_DatadogEvent_Create"/>
+				<jms:publish doc:name="Publish" doc:id="4ab66367-0f26-4a32-b0be-60c29daab775" config-ref="JMS_Config" destination="${jms.replyTo}">
+					<jms:message correlationId="#[attributes.headers.correlationId]">
+						<jms:body><![CDATA[#[error.description]]]></jms:body>
+					</jms:message>
+				</jms:publish>
+			</on-error-propagate>
+		</error-handler>
+	</flow>
+</mule>

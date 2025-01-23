@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd">
+	<flow name="infi-snowflake-sapi_executeSql" doc:id="0569dd04-1176-4e97-afa1-ad3438dab0ff" >
+		<http:listener doc:name="Listener" doc:id="136d03e2-1865-43a0-b25d-5317a456d7d4" config-ref="Snowflake_HTTP_Listener_config" path="/snowflake/executeSql"/>
+		<logger level="INFO" doc:name="Logger" doc:id="7376a8d1-6f06-4220-9632-9a2aa37f7ed5" message="#[&quot;[&quot; ++ (now() &gt;&gt; &quot;PST&quot;) as String {format: &quot;yyyy-MM-dd'T'hh:mm:ss&quot;} ++ &quot;], &quot; ++ &quot;###SyncJobId=&quot; &#10;++ payload.transaction_header.syncJobId&#10;++ &quot;###, TransactionId=&quot; ++ payload.transaction_header.transactionId ++&#10;&quot;\nSnowflake Record Creation System API Started Successfully&quot;]"/>
+		<try doc:name="Try" doc:id="0d97f7bb-befd-4c24-883f-fe1e68bbe6b9" >
+			<until-successful maxRetries="3" doc:name="Until Successful" doc:id="4ae7a5ec-1032-497a-acd5-801b69c268b7" millisBetweenRetries="5000">
+				<db:bulk-insert doc:name="InsertToSnowflake" doc:id="4359a088-6fbe-4159-addb-e76901e02fd3" config-ref="Database_Config" target="snowflakeResponse">
+					<db:bulk-input-parameters ><![CDATA[#[payload.payload]]]></db:bulk-input-parameters>
+					<db:sql ><![CDATA[#[payload.sql]]]></db:sql>
+				</db:bulk-insert>
+			</until-successful>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="49c767d6-7ad8-479b-abdc-5ec32acb31b7" >
+					<set-payload value="#[error.description]" doc:name="Set Error Description" doc:id="283c092a-9ae5-446d-80d3-817207939718" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<logger level="INFO" doc:name="Logger" doc:id="1f153dac-740c-4611-8479-9d334a56c1fb" message="#[&quot;[&quot; ++ (now() &gt;&gt; &quot;PST&quot;) as String {format: &quot;yyyy-MM-dd'T'hh:mm:ss&quot;} ++ &quot;], &quot; ++ &quot;###SyncJobId=&quot; &#10;++ payload.transaction_header.syncJobId&#10;++ &quot;###, TransactionId=&quot; ++ payload.transaction_header.transactionId ++&#10;&quot;\nSnowflake Record Creation System API Ended Successfully&quot;]"/>
+	</flow>
+</mule>

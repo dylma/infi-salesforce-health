@@ -1,0 +1,19 @@
+sfdc:
+  username: "![4G5mhGhpqrXlg00Yi2xZFTPNUfPleyDZ]"
+  password: "![jXuHpRBrsBXkwHW7ao3vEw==]"
+  security_token: "![Q/J7ln5vsUbHGYv8WA5S3DFm6kD6oGAfB29dHA2r/Co=]"
+  client_id: "![/8bFPhCYn0p4yqsOxV/AP9QvNoCv822nkmQNf7ognWjbQjc6G/GipVa01+IN9XPIH7E4T+cvE+Qn85dsM1JSG41CCcAq+EXEpj1Ub+U2WuANqVBnlflJTg==]"
+  client_secret: "![RYE2zyZNoh7b1iD9iJyXDhDEB9G4sb0BXbJLjhuzVcGM3oZoup3Alpz9HxqbG4KAwLn0y+YxN+Utn7gI3rfyS5/REYt9BW9g]"
+  
+snowflake:
+  url: "![53IiO7qaGwG4/53mRR11YXvrR+C038B9E+8WQmrLCTr3bis3O0AKWsZh01KRw8mL/KyRc7udZ21/2X+UZ44/XQ==]"
+  username: "![845yjzvhB3M=]"
+  password: "![QjQ5hcsHLL/UG/jBiLQzUw==]"
+
+datadog:
+  apikey: "![tCvjzIpssr58YgGmCzpuxFCHb1eEMStR10iCtpa/4RgwcSLEK1QkMQ==]"
+  
+keystore:
+  path: "![BxH1Y135Q+TUzJTLs1wKgw==]"
+  password: "![+EQcPpYJKWQ3uXZzp+6aTA==]"  
+  key_password: "![+EQcPpYJKWQ3uXZzp+6aTA==]"

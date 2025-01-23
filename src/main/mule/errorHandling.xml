@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns="http://www.mulesoft.org/schema/mule/core"
+	xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+	<flow name="errorHandling_DatadogEvent_Create" doc:id="af0256e0-8efd-4be9-ade5-f510c5d1ed4a" >
+		<logger level="INFO" doc:name="Logger" doc:id="50811e04-7461-427a-b18b-2e8f4a4680dd" message="Publish Error Event to Datadog API Started Successfuly" />
+		<http:request method="POST" doc:name="Request Datadog Events API" doc:id="f95aaaae-00cf-41b1-aaf3-9bd9439da5a2" config-ref="HTTPS_Request_configuration1" url="https://api.us5.datadoghq.com/api/v1/events">
+			<http:body><![CDATA[#[%dw 2.0
+output application/json
+---
+{
+  "title": "infi-sfhc-error-events",
+  "text": error.description,
+  "tags": [
+    "mulesoft:Error"
+  ]
+}]]]></http:body>
+				<http:headers><![CDATA[#[output application/java
+---
+{
+	"Content-Type" : "application/json",
+	"DD-API-KEY" : "${secure::datadog.apikey}"
+}]]]></http:headers>
+		</http:request>
+		<logger level="INFO" doc:name="Logger" doc:id="23e4c042-65f2-45da-b653-08b3a65d990e" message="#[payload]" />
+		<logger level="INFO" doc:name="Logger" doc:id="ba2f2871-dbd6-42ef-a652-78d805ef9974" message="Publish Error Event to Datadog API Ended Successfuly" />
+	</flow>
+	<error-handler name="errorEventToDatadogFlow_Handler" doc:id="83a512ba-bdbf-421a-9354-d39db5e5f3fe" >
+		<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="a5077391-9932-4ddc-ad1d-a3648baf1b55" type="ANY">
+			<flow-ref doc:name="Flow Reference" doc:id="ba8dafca-ceed-4acf-b373-d828bda42de6" name="errorHandling_DatadogEvent_Create"/>
+		</on-error-propagate>
+	</error-handler>
+</mule>
