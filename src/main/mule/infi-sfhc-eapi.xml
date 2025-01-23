@@ -1,0 +1,205 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:jms="http://www.mulesoft.org/schema/mule/jms" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
+    <http:listener-config name="CareBenefitVerification-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="${https.private_port}" protocol="HTTPS">
+			<tls:context >
+				<tls:trust-store insecure="true" />
+				<tls:key-store type="jks" path="${secure::keystore.path}" keyPassword="${secure::keystore.key_password}" password="${secure::keystore.password}" />
+			</tls:context>
+		</http:listener-connection>
+    </http:listener-config>
+    <apikit:config name="CareBenefitVerification-config" api="CareBenefitVerification.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="CareBenefitVerification-main">
+        <http:listener config-ref="CareBenefitVerification-httpListenerConfig" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="CareBenefitVerification-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="CareBenefitVerification-console">
+        <http:listener config-ref="CareBenefitVerification-httpListenerConfig" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="CareBenefitVerification-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\care-benefit-verification:CareBenefitVerification-config">
+        <logger level="INFO" doc:name="Logger" doc:id="e3cc0a69-f578-4d21-972d-f12def9cf2b6" message="CareBenefitVerifyRequest Salesforce Query Job started successfuly"/>
+		<ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"ID" : attributes.queryParams.salesforce_id		
+}]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+		<salesforce:query doc:name="Query" doc:id="c81f3b4e-ecda-4e76-81e0-7bc3b1567991" config-ref="Salesforce_Config">
+			<salesforce:salesforce-query ><![CDATA[Select fields(all) from CareBenefitVerifyRequest where Id = ':Id']]></salesforce:salesforce-query>
+			<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	"Id" : payload.ID
+}]]]></salesforce:parameters>
+		</salesforce:query>
+		<set-payload value="#[payload[0]]" doc:name="Set Payload" doc:id="c1163632-b743-4d6f-bedf-4100831d20ca" mimeType="application/java"/>
+		<ee:transform doc:name="Transform Message" doc:id="789e2946-76a7-45d9-a229-0883837a4744">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<logger level="INFO" doc:name="Logger" doc:id="c526bcc0-e085-474e-813d-fc947a0333e1" message="CareBenefitVerifyRequest Salesforce Query Job ended successfuly"/>
+		<error-handler ref="errorEventToDatadogFlow_Handler" />
+    </flow>
+    <flow name="post:\care-benefit-verification:application\json:CareBenefitVerification-config">
+        <logger level="INFO" doc:name="Logger" doc:id="a8f283d0-78af-4d6c-995d-584c982dda64" message="Salesforce Health CareBenefitVerifyRequest Data received successfuly from client"/>
+		<ee:transform doc:name="Transform Message">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+            </ee:message>
+			<ee:variables >
+				<ee:set-variable variableName="transaction_header" ><![CDATA[%dw 2.0
+output application/java
+var currentDate = (now() >> 'PST') as String {format: "yyyy-MM-dd'T'HH:mm"}
+---
+{
+	"syncJobId" : "POST:care-benefit-verification_" ++ currentDate,
+	"transactionId" : uuid(),
+}]]></ee:set-variable>
+			</ee:variables>
+        </ee:transform>
+		<try doc:name="Try" doc:id="2c7cef84-1c6c-4577-a9c1-88c7117e3acf" >
+			<jms:publish-consume doc:name="Publish consume" doc:id="703154ca-2201-4272-99b3-e7a7c4b5e97e" destination="${jms.destination}" config-ref="JMS_Config">
+			<jms:message>
+				<jms:reply-to destination="${jms.replyTo}" />
+					<jms:properties ><![CDATA[#[{
+	"transaction_header" : vars.transaction_header
+}]]]></jms:properties>
+			</jms:message>
+			<jms:consume-configuration maximumWait="5" maximumWaitUnit="MINUTES" />
+		</jms:publish-consume>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="228375f3-9af7-4ef3-89e1-cda5c94ac006" >
+					<set-payload value="#[error.description]" doc:name="Set Error Description" doc:id="617fda43-c310-4234-84c2-c9dbd192a38e" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<logger level="INFO" doc:name="Logger" doc:id="f02a145a-2e0d-46ba-a7ce-48d299d858f4" message="Salesforce Health CareBenefitVerifyRequest Creation response successfuly sent to client"/>
+		<error-handler ref="errorEventToDatadogFlow_Handler" />
+    </flow>
+</mule>

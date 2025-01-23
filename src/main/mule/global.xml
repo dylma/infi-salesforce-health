@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls" xmlns:http="http://www.mulesoft.org/schema/mule/http"
+	xmlns:jms="http://www.mulesoft.org/schema/mule/jms"
+	xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns:snowflake="http://www.mulesoft.org/schema/mule/snowflake" xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd
+http://www.mulesoft.org/schema/mule/snowflake http://www.mulesoft.org/schema/mule/snowflake/current/mule-snowflake.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/jms http://www.mulesoft.org/schema/mule/jms/current/mule-jms.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd">
+	<configuration-properties doc:name="Configuration properties" doc:id="aa4ac333-d21b-49e8-b1ec-008ed3fdcc80" file="config/${env}-config.yaml" />
+	<global-property doc:name="Global Property" doc:id="40044c3b-044b-4e12-8a27-0e74693710c6" name="key" value="${key}" />
+	<global-property doc:name="Global Property" doc:id="6a5391de-387e-4ee6-a024-8de1ea4a07d9" name="env" value="${env}" />
+	<salesforce:sfdc-config name="Salesforce_Config" doc:name="Salesforce Config" doc:id="b3aefc15-6603-4956-8c8b-9ebef94ec768" >
+		<salesforce:oauth-user-pass-connection consumerKey="${secure::sfdc.client_id}" consumerSecret="${secure::sfdc.client_secret}" username="${secure::sfdc.username}" password="${secure::sfdc.password}" securityToken="${secure::sfdc.security_token}"/>
+	</salesforce:sfdc-config>
+	<secure-properties:config name="Secure_Properties_Config" doc:name="Secure Properties Config" doc:id="d385c4d1-7628-4307-a93f-28b16b27ddad" file="config/${env}-secureConfig.yaml" key="${key}" >
+		<secure-properties:encrypt algorithm="Blowfish" />
+	</secure-properties:config>
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="e9c98421-ed56-4692-9fbf-be16641c519b" >
+		<db:generic-connection url="${secure::snowflake.url}" driverClassName="net.snowflake.client.jdbc.SnowflakeDriver" user="${secure::snowflake.username}" password="${secure::snowflake.password}" />
+	</db:config>
+	<jms:config name="JMS_Config" doc:name="JMS Config" doc:id="fa01bdbe-1a95-4713-9ba5-022757b0a572" >
+		<jms:active-mq-connection />
+	</jms:config>
+	<http:listener-config name="Snowflake_HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="baae3450-db7e-4ab1-8180-ed09ac26da23">
+		<http:listener-connection host="0.0.0.0" port="${http.port}" >
+		</http:listener-connection>
+	</http:listener-config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="f29a2592-384e-4a33-be49-f13d9e068105" >
+		<http:request-connection host="${http.host}" port="${http.port}" >
+		</http:request-connection>
+	</http:request-config>
+	<http:request-config name="HTTPS_Request_configuration1" doc:name="HTTP Request configuration" doc:id="bf8c8338-5ed5-4cdd-ad54-48192647aebb" >
+		<http:request-connection protocol="HTTPS" port="${https.sf_private_port}" host="${http.host}">
+			<tls:context >
+				<tls:trust-store insecure="true" />
+			</tls:context>
+		</http:request-connection>
+	</http:request-config>
+	<configuration doc:name="Configuration" doc:id="18466c29-03c0-4abe-97da-181e17c89dbd" defaultErrorHandler-ref="errorEventToDatadogFlow_Handler" />
+</mule>

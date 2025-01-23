@@ -1,0 +1,11 @@
+http:
+  host: "localhost"
+  port: "8080"
+  
+https:
+  private_port: "8443" 
+  sf_private_port: "8448" 
+  
+jms:
+  destination: "CareBenefitVerifcationRequest_Creation"
+  replyTo: "CareBenefitVerifcationRequest_Creation_Success"

@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:tls="http://www.mulesoft.org/schema/mule/tls"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="
+http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+    <http:listener-config name="SalesforceHealthCloud-httpListenerConfig">
+        <http:listener-connection host="0.0.0.0" port="${https.sf_private_port}" protocol="HTTPS">
+			<tls:context >
+				<tls:trust-store insecure="true" />
+				<tls:key-store type="jks" path="${secure::keystore.path}" keyPassword="${secure::keystore.key_password}" password="${secure::keystore.password}" />
+			</tls:context>
+		</http:listener-connection>
+    </http:listener-config>
+    <apikit:config name="SalesforceHealthCloud-config" api="SalesforceHealthCloud.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="SalesforceHealthCloud-main">
+        <http:listener config-ref="SalesforceHealthCloud-httpListenerConfig" path="/sfhc/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="SalesforceHealthCloud-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:BAD_REQUEST">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Bad request"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">400</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:METHOD_NOT_ALLOWED">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Method not allowed"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">405</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_ACCEPTABLE">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not acceptable"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">406</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:UNSUPPORTED_MEDIA_TYPE">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Unsupported media type"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">415</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+            <on-error-propagate type="APIKIT:NOT_IMPLEMENTED">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Not Implemented"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">501</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="SalesforceHealthCloud-console">
+        <http:listener config-ref="Snowflake_HTTP_Listener_config" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body>#[payload]</http:body>
+                <http:headers>#[vars.outboundHeaders default {}]</http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="SalesforceHealthCloud-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform doc:name="Transform Message">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="post:\salesforce-create-CareBenefitVerifyRequest:application\json:SalesforceHealthCloud-config">
+		<logger level="INFO" doc:name="Logger" doc:id="9310efd2-4d2f-479c-817c-620c6be69bdb" message="#[&quot;[&quot; ++ (now() &gt;&gt; &quot;PST&quot;) as String {format: &quot;yyyy-MM-dd'T'hh:mm:ss&quot;} ++ &quot;], &quot; ++ &quot;###SyncJobId=&quot; &#10;++ payload.transaction_header.syncJobId&#10;++ &quot;###, TransactionId=&quot; ++ payload.transaction_header.transactionId ++&#10;&quot;\nCareBenefitVerificationRequest Creation System API Started Successfully&quot;]"/>
+		<try doc:name="Try" doc:id="658d6692-392d-4fee-8105-225d6fd648bd" >
+			<until-successful maxRetries="2" doc:name="Until Successful" doc:id="f3225437-b6c8-4114-a0ee-d545860c7c65" millisBetweenRetries="5000" >
+				<foreach doc:name="For Each" doc:id="4ac3ea4c-7816-4db0-b9a1-35136e616a20" collection="#[payload.payload.patients]">
+					<salesforce:upsert doc:name="Upsert" doc:id="e3c594c6-132a-4c7a-9ca8-a8a81caef44f" config-ref="Salesforce_Config" objectType="CareBenefitVerifyRequest" externalIdFieldName="Id">
+						<salesforce:records ><![CDATA[#[%dw 2.0
+output application/json
+---
+[payload]]]]></salesforce:records>
+					</salesforce:upsert>
+					<salesforce:query doc:name="Query Id and Status" doc:id="ed7bbd3c-e3fa-4867-84e6-8ccdb41f97d0" config-ref="Salesforce_Config" target="care_benefit_verify_request">
+						<salesforce:salesforce-query ><![CDATA[select Id,MemberPlanId,Status,CreatedDate,CreatedById 
+from CareBenefitVerifyRequest 
+where CreatedById = ':Id'
+order by CreatedDate desc limit 1
+]]></salesforce:salesforce-query>
+						<salesforce:parameters ><![CDATA[#[output application/java
+---
+{
+	"Id" : "005fJ000002JwtmQAC"
+}]]]></salesforce:parameters>
+					</salesforce:query>
+					<set-variable value='#[%dw 2.0&#10;output application/json&#10;---&#10;(vars.salesforce_response default []) ++ &#10;[&#10;	{&#10;		"ID" : vars.care_benefit_verify_request.Id[0],&#10;		"SUCCESS" : payload.successful&#10;	}&#10;]]' doc:name="Set Variable" doc:id="33b578b3-42d9-4443-967a-71db938824ce" variableName="salesforce_response"/>
+				</foreach>
+			</until-successful>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="1bef56a3-0c94-4963-8d7b-e95fb1d040fd" >
+					<set-payload value="#[error.description]" doc:name="Set Error Description" doc:id="8fe4c88b-ddb3-446f-84e7-9fe6af5d2488" />
+				</on-error-propagate>
+			</error-handler>
+		</try>
+		<logger level="INFO" doc:name="Logger" doc:id="c2016d7a-fa5f-4d91-8fcc-a4ce40cd0abd" message="#[&quot;[&quot; ++ (now() &gt;&gt; &quot;PST&quot;) as String {format: &quot;yyyy-MM-dd'T'hh:mm:ss&quot;} ++ &quot;], &quot; ++ &quot;###SyncJobId=&quot; &#10;++ payload.transaction_header.syncJobId&#10;++ &quot;###, TransactionId=&quot; ++ payload.transaction_header.transactionId ++&#10;&quot;\nCareBenefitVerificationRequest Creation System API Ended Successfully&quot;]" />
+		<set-payload value="#[vars.salesforce_response]" doc:name="Set Payload" doc:id="4aca4f79-0781-4189-8156-d6258463d48b" />
+		<error-handler ref="errorEventToDatadogFlow_Handler" />
+    </flow>
+</mule>

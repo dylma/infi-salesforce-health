@@ -1,0 +1,378 @@
+#%RAML 1.0
+title: Care Benefit Verification API
+version: v1
+baseUri: https://api.example.com/{version}
+mediaType: application/json
+
+/care-benefit-verification:
+  description: |
+    Endpoint to verify care benefit eligibility for a list of patients.
+  post:
+    description: |
+      Submit a list of patients with their details for care benefit verification. The response will indicate the eligibility of each patient for the care benefits.
+    body:
+      application/json:
+        example: |
+          {
+            "record_count": 2,
+            "patients": [
+              {
+                "patient_details": {
+                  "first_name": "John",
+                  "last_name": "Doe",
+                  "date_of_birth": "1985-06-15",
+                  "gender": "Male"
+                },
+                "insurance_information": {
+                  "insurance_provider_name": "Blue Cross Blue Shield",
+                  "policy_number": "0SqfJ00000007uOSAQ",
+                  "group_number": "G5678",
+                  "subscriber_id": "9876543210"
+                },
+                "provider_information": {
+                  "npi": "1234567890",
+                  "provider_name": "Dr. Sarah Johnson, MD"
+                },
+                "service_details": {
+                  "service_type": "Consultation",
+                  "service_date": "2025-01-20",
+                  "diagnosis_code": "J01.90",
+                  "diagnosis_description": "Acute Sinusitis, Unspecified",
+                  "procedure_code": "99213",
+                  "procedure_description": "Office or other outpatient visit for the evaluation and management of an established patient"
+                }
+              },
+              {
+                "patient_details": {
+                  "first_name": "Jane",
+                  "last_name": "Smith",
+                  "date_of_birth": "1992-11-08",
+                  "gender": "Female"
+                },
+                "insurance_information": {
+                  "insurance_provider_name": "Aetna",
+                  "policy_number": "0SqfJ00000007uOSAQ",
+                  "group_number": "G4321",
+                  "subscriber_id": "1122334455"
+                },
+                "provider_information": {
+                  "npi": "9876543210",
+                  "provider_name": "Dr. Michael Brown, MD"
+                },
+                "service_details": {
+                  "service_type": "Surgery",
+                  "service_date": "2025-01-22",
+                  "diagnosis_code": "K35.80",
+                  "diagnosis_description": "Acute Appendicitis, Unspecified",
+                  "procedure_code": "47562",
+                  "procedure_description": "Laparoscopic appendectomy"
+                }
+              }
+            ]
+          }
+        properties:
+          record_count:
+            type: integer
+            description: The number of patient records in the request.
+            required: true
+          patients:
+            type: array
+            items:
+              type: object
+              properties:
+                patient_details:
+                  type: object
+                  properties:
+                    first_name:
+                      type: string
+                      description: First name of the patient.
+                      required: true
+                    last_name:
+                      type: string
+                      description: Last name of the patient.
+                      required: true
+                    date_of_birth:
+                      type: string
+                      description: "Patient's date of birth in YYYY-MM-DD format."
+                      required: true
+                    gender:
+                      type: string
+                      description: Gender of the patient.
+                      required: true
+                insurance_information:
+                  type: object
+                  properties:
+                    insurance_provider_name:
+                      type: string
+                      description: Name of the insurance provider.
+                      required: true
+                    policy_number:
+                      type: string
+                      description: Policy number for the patient’s insurance.
+                      required: true
+                    group_number:
+                      type: string
+                      description: Group number associated with the insurance.
+                      required: true
+                    subscriber_id:
+                      type: string
+                      description: Subscriber ID for the insurance policy.
+                      required: true
+                provider_information:
+                  type: object
+                  properties:
+                    npi:
+                      type: string
+                      description: National Provider Identifier (NPI) of the provider.
+                      required: true
+                    provider_name:
+                      type: string
+                      description: Name of the healthcare provider.
+                      required: true
+                service_details:
+                  type: object
+                  properties:
+                    service_type:
+                      type: string
+                      description: Type of service being provided (e.g., Consultation, Surgery).
+                      required: true
+                    service_date:
+                      type: string
+                      description: "Date of service in YYYY-MM-DD format."
+                      required: true
+                    diagnosis_code:
+                      type: string
+                      description: Diagnosis code for the medical condition being treated.
+                      required: true
+                    diagnosis_description:
+                      type: string
+                      description: Description of the diagnosis.
+                      required: true
+                    procedure_code:
+                      type: string
+                      description: Code for the medical procedure performed.
+                      required: true
+                    procedure_description:
+                      type: string
+                      description: Description of the procedure.
+                      required: true
+    responses:
+      200:
+        description: |
+          Successfully processed the care benefit verification request for one or more patients.
+        body:
+          application/json:
+            example: |
+              {
+                "record_count": 2,
+                "verification_results": [
+                  {
+                    "patient_details": {
+                      "first_name": "John",
+                      "last_name": "Doe"
+                    },
+                    "eligibility": true,
+                    "benefit_amount": 1000,
+                    "coverage_details": "Full coverage for outpatient care"
+                  },
+                  {
+                    "patient_details": {
+                      "first_name": "Jane",
+                      "last_name": "Smith"
+                    },
+                    "eligibility": false,
+                    "benefit_amount": 0,
+                    "coverage_details": "No coverage for surgery"
+                  }
+                ]
+              }
+            properties:
+              record_count:
+                type: integer
+                description: The number of patient records in the response.
+              verification_results:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    patient_details:
+                      type: object
+                      properties:
+                        first_name:
+                          type: string
+                        last_name:
+                          type: string
+                    eligibility:
+                      type: boolean
+                      description: Indicates whether the patient is eligible for the benefit.
+                    benefit_amount:
+                      type: integer
+                      description: The amount the patient is eligible for.
+                    coverage_details:
+                      type: string
+                      description: A description of the coverage available to the patient.
+      400:
+        description: |
+          Invalid input, e.g., missing required fields or invalid data format.
+        body:
+          application/json:
+            example: |
+              {
+                "error": "Invalid request",
+                "message": "Missing required patient details."
+              }
+            properties:
+              error:
+                type: string
+              message:
+                type: string
+      500:
+        description: |
+          Internal server error, something went wrong on the server side.
+        body:
+          application/json:
+            example: |
+              {
+                "error": "Internal server error",
+                "message": "Unable to process the request."
+              }
+            properties:
+              error:
+                type: string
+              message:
+                type: string
+
+  get:
+    description: |
+      Retrieve the details of a specific patient by providing their Salesforce ID.
+    queryParameters:
+      salesforce_id:
+        type: string
+        description: The Salesforce ID of the patient to retrieve.
+        required: true
+    responses:
+      200:
+        description: |
+          Successfully retrieved the patient's details.
+        body:
+          application/json:
+            example: |
+              {
+                "patient_details": {
+                  "first_name": "John",
+                  "last_name": "Doe",
+                  "date_of_birth": "1985-06-15",
+                  "gender": "Male"
+                },
+                "insurance_information": {
+                  "insurance_provider_name": "Blue Cross Blue Shield",
+                  "policy_number": "BCBS1234567890",
+                  "group_number": "G5678",
+                  "subscriber_id": "9876543210"
+                },
+                "provider_information": {
+                  "npi": "1234567890",
+                  "provider_name": "Dr. Sarah Johnson, MD"
+                },
+                "service_details": {
+                  "service_type": "Consultation",
+                  "service_date": "2025-01-20",
+                  "diagnosis_code": "J01.90",
+                  "diagnosis_description": "Acute Sinusitis, Unspecified",
+                  "procedure_code": "99213",
+                  "procedure_description": "Office or other outpatient visit for the evaluation and management of an established patient"
+                }
+              }
+            properties:
+              patient_details:
+                type: object
+                properties:
+                  first_name:
+                    type: string
+                  last_name:
+                    type: string
+                  date_of_birth:
+                    type: string
+                    description: "Patient's date of birth in YYYY-MM-DD format."
+                  gender:
+                    type: string
+              insurance_information:
+                type: object
+                properties:
+                  insurance_provider_name:
+                    type: string
+                  policy_number:
+                    type: string
+                  group_number:
+                    type: string
+                  subscriber_id:
+                    type: string
+              provider_information:
+                type: object
+                properties:
+                  npi:
+                    type: string
+                  provider_name:
+                    type: string
+              service_details:
+                type: object
+                properties:
+                  service_type:
+                    type: string
+                  service_date:
+                    type: string
+                    description: "Date of service in YYYY-MM-DD format."
+                  diagnosis_code:
+                    type: string
+                  diagnosis_description:
+                    type: string
+                  procedure_code:
+                    type: string
+                  procedure_description:
+                    type: string
+      400:
+        description: |
+          Invalid Salesforce ID provided.
+        body:
+          application/json:
+            example: |
+              {
+                "error": "Invalid request",
+                "message": "Salesforce ID is required."
+              }
+            properties:
+              error:
+                type: string
+              message:
+                type: string
+      404:
+        description: |
+          Patient not found for the given Salesforce ID.
+        body:
+          application/json:
+            example: |
+              {
+                "error": "Not Found",
+                "message": "No patient found with the provided Salesforce ID."
+              }
+            properties:
+              error:
+                type: string
+              message:
+                type: string
+      500:
+        description: |
+          Internal server error, something went wrong on the server side.
+        body:
+          application/json:
+            example: |
+              {
+                "error": "Internal server error",
+                "message": "Unable to retrieve patient details."
+              }
+            properties:
+              error:
+                type: string
+              message:
+                type: string
+
