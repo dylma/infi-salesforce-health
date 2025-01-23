@@ -4,6 +4,7 @@
 http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/current/mule-tls.xsd http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd 
 http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
 http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd">
+    <!--  
     <http:listener-config name="SalesforceHealthCloud-httpListenerConfig">
         <http:listener-connection host="0.0.0.0" port="${https.sf_private_port}" protocol="HTTPS">
 			<tls:context >
@@ -12,9 +13,10 @@ http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mu
 			</tls:context>
 		</http:listener-connection>
     </http:listener-config>
+    -->
     <apikit:config name="SalesforceHealthCloud-config" api="SalesforceHealthCloud.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
     <flow name="SalesforceHealthCloud-main">
-        <http:listener config-ref="SalesforceHealthCloud-httpListenerConfig" path="/sfhc/*">
+        <http:listener config-ref="CareBenefitVerification-httpListenerConfig" path="/sfhc/*">
             <http:response statusCode="#[vars.httpStatus default 200]">
                 <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
             </http:response>

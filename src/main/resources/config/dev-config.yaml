@@ -1,10 +1,11 @@
 http:
   host: "localhost"
-  port: "8080"
+  port: "8081"
+  snowflake_port: "8091"
   
 https:
-  private_port: "8443" 
-  sf_private_port: "8448" 
+  private_port: "443" 
+  sf_private_port: "443" 
   
 jms:
   destination: "CareBenefitVerifcationRequest_Creation"

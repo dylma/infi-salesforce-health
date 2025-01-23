@@ -26,19 +26,22 @@ http://www.mulesoft.org/schema/mule/tls http://www.mulesoft.org/schema/mule/tls/
 		<jms:active-mq-connection />
 	</jms:config>
 	<http:listener-config name="Snowflake_HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="baae3450-db7e-4ab1-8180-ed09ac26da23">
-		<http:listener-connection host="0.0.0.0" port="${http.port}" >
+		<http:listener-connection host="0.0.0.0" port="${http.snowflake_port}" >
 		</http:listener-connection>
 	</http:listener-config>
 	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="f29a2592-384e-4a33-be49-f13d9e068105" >
-		<http:request-connection host="${http.host}" port="${http.port}" >
+		<http:request-connection host="${http.host}" port="${http.port}">
 		</http:request-connection>
 	</http:request-config>
 	<http:request-config name="HTTPS_Request_configuration1" doc:name="HTTP Request configuration" doc:id="bf8c8338-5ed5-4cdd-ad54-48192647aebb" >
-		<http:request-connection protocol="HTTPS" port="${https.sf_private_port}" host="${http.host}">
+		<http:request-connection port="${https.sf_private_port}" host="${http.host}" protocol="HTTPS">
 			<tls:context >
 				<tls:trust-store insecure="true" />
 			</tls:context>
 		</http:request-connection>
 	</http:request-config>
 	<configuration doc:name="Configuration" doc:id="18466c29-03c0-4abe-97da-181e17c89dbd" defaultErrorHandler-ref="errorEventToDatadogFlow_Handler" />
+	<http:request-config name="Snowflake_HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="659d64c6-5554-486b-8b75-73852ff6ed66" >
+		<http:request-connection host="${http.host}" port="${http.snowflake_port}" />
+	</http:request-config>
 </mule>

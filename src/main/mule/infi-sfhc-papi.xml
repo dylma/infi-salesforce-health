@@ -49,7 +49,7 @@ VALUES (
 			</ee:variables>
 		</ee:transform>
 		<logger level="INFO" doc:name="Logger" doc:id="03815f6a-261a-4651-8030-534ebb667139" message="#[payload]"/>
-		<http:request method="POST" doc:name="InsertToSnowflakeCareBenefitVerifyRequestTable" doc:id="cc1496a0-99a3-4c7d-8ecb-b860e6e22bf1" target="snowResults" config-ref="HTTP_Request_configuration" path="/snowflake/executeSql">
+		<http:request method="POST" doc:name="InsertToSnowflakeCareBenefitVerifyRequestTable" doc:id="cc1496a0-99a3-4c7d-8ecb-b860e6e22bf1" target="snowResults" config-ref="Snowflake_HTTP_Request_configuration" path="/snowflake/executeSql">
 			<http:body ><![CDATA[#[%dw 2.0
 output application/json
 ---
